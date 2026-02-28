@@ -59,14 +59,23 @@ async def dashboard(current_user: User = Depends(get_current_user), db: AsyncSes
     week_result = await db.execute(select(Progress).where(Progress.user_id == current_user.id, Progress.log_date >= seven_ago))
     week_logs = week_result.scalars().all()
 
+    # Calculate Hydration Goal (Weight * 35ml / 250ml per glass) - default to 8 if no weight
+    water_goal_glasses = 8
+    if current_user.weight_kg:
+        water_goal_glasses = int(round((current_user.weight_kg * 35) / 250))
+    elif len(logs) > 0 and logs[-1].weight_kg:
+        water_goal_glasses = int(round((logs[-1].weight_kg * 35) / 250))
+
     return {
         "streak": current_user.streak_days,
         "total_workouts": current_user.total_workouts,
+        "daily_water_target_glasses": water_goal_glasses,
         "this_month": {"workouts": total_workouts, "calories_burned": total_calories, "healthy_meals": total_meals},
         "this_week": {
             "workouts": sum(l.workouts_done for l in week_logs),
             "calories": sum(l.calories_burned for l in week_logs),
             "meals": sum(l.healthy_meals for l in week_logs),
+            "water_glasses": sum(l.water_glasses for l in week_logs),
         },
         "chart_data": [{"date": l.log_date, "workouts": l.workouts_done, "calories": l.calories_burned, "meals": l.healthy_meals, "water": l.water_glasses, "mood": l.mood, "weight": l.weight_kg} for l in logs],
         "charity_impact": {"amount_donated": current_user.total_donations, "people_impacted": current_user.total_donations // 100, "workouts_done": current_user.total_workouts, "healthy_meals": total_meals}

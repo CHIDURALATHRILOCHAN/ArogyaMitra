@@ -168,12 +168,49 @@ export default function ProgressPage() {
                                 <h3 style={{ fontWeight: 700, marginBottom: 20 }}>📝 Log Today's Activity</h3>
                                 {saved && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, color: '#10b981', fontSize: 14 }}>✅ Progress logged successfully!</div>}
                                 <form onSubmit={handleLog}>
-                                    {[['Date', 'log_date', 'date', null], ['Workouts Done', 'workouts_done', 'number', { min: 0, max: 10 }], ['Calories Burned', 'calories_burned', 'number', { min: 0 }], ['Healthy Meals', 'healthy_meals', 'number', { min: 0, max: 10 }], ['Water Glasses', 'water_glasses', 'number', { min: 0, max: 20 }], ['Weight (kg)', 'weight_kg', 'number', { step: 0.1 }]].map(([label, key, type, extra]) => (
+                                    {[['Date', 'log_date', 'date', null], ['Workouts Done', 'workouts_done', 'number', { min: 0, max: 10 }], ['Calories Burned', 'calories_burned', 'number', { min: 0 }], ['Healthy Meals', 'healthy_meals', 'number', { min: 0, max: 10 }], ['Weight (kg)', 'weight_kg', 'number', { step: 0.1 }]].map(([label, key, type, extra]) => (
                                         <div key={key} className="input-group">
                                             <label className="input-label">{label}</label>
                                             <input className="input" type={type} value={logForm[key]} onChange={e => setLogForm({ ...logForm, [key]: e.target.value })} {...(extra || {})} />
                                         </div>
                                     ))}
+
+                                    {/* Hydration Logger */}
+                                    <div className="card" style={{ background: 'rgba(56,189,248,0.05)', borderColor: 'rgba(56,189,248,0.2)', marginBottom: 20, padding: 16 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                            <label className="input-label" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8' }}>
+                                                <span style={{ fontSize: 18 }}>💧</span> Water Intake (250ml glasses)
+                                            </label>
+                                            <div style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8' }}>
+                                                {logForm.water_glasses} <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>/ {dashData?.daily_water_target_glasses || 8}</span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                            <button type="button"
+                                                className="btn-secondary"
+                                                style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', fontSize: 20, background: 'rgba(0,0,0,0.2)' }}
+                                                onClick={() => setLogForm(f => ({ ...f, water_glasses: Math.max(0, parseInt(f.water_glasses) - 1) }))}>
+                                                -
+                                            </button>
+
+                                            <div style={{ flex: 1, height: 24, background: 'rgba(0,0,0,0.3)', borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
+                                                <div style={{
+                                                    position: 'absolute', top: 0, left: 0, height: '100%',
+                                                    background: 'linear-gradient(90deg, #0ea5e9, #38bdf8)',
+                                                    width: `${Math.min(100, (logForm.water_glasses / (dashData?.daily_water_target_glasses || 8)) * 100)}%`,
+                                                    transition: 'width 0.3s ease-out'
+                                                }} />
+                                            </div>
+
+                                            <button type="button"
+                                                className="btn-primary"
+                                                style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', fontSize: 20, background: '#0ea5e9' }}
+                                                onClick={() => setLogForm(f => ({ ...f, water_glasses: parseInt(f.water_glasses) + 1 }))}>
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
                                     <div className="input-group">
                                         <label className="input-label">Mood (1-10): {logForm.mood}</label>
                                         <input type="range" min="1" max="10" value={logForm.mood} onChange={e => setLogForm({ ...logForm, mood: e.target.value })} style={{ width: '100%', accentColor: 'var(--accent-purple)' }} />

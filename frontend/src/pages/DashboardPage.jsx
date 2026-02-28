@@ -192,10 +192,32 @@ export default function DashboardPage() {
                             )}
                         </div>
 
+                        {/* Hydration Tracker */}
+                        <div className="card" style={{ borderColor: 'rgba(56,189,248,0.2)' }}>
+                            <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 18 }}>💧</span> Daily Hydration
+                            </h3>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 12 }}>
+                                <span style={{ fontSize: 32, fontWeight: 800, color: '#38bdf8', lineHeight: 1 }}>{dashData?.chart_data?.slice(-1)[0]?.water || 0}</span>
+                                <span style={{ fontSize: 16, color: 'var(--text-secondary)', paddingBottom: 4 }}>/ {dashData?.daily_water_target_glasses || 8} glasses</span>
+                            </div>
+
+                            <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
+                                <div style={{
+                                    height: '100%',
+                                    background: '#38bdf8',
+                                    width: `${Math.min(100, ((dashData?.chart_data?.slice(-1)[0]?.water || 0) / (dashData?.daily_water_target_glasses || 8)) * 100)}%`,
+                                    transition: 'width 0.5s ease-out'
+                                }} />
+                            </div>
+                            <button className="btn-secondary" style={{ width: '100%', fontSize: 13, background: 'rgba(56,189,248,0.1)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.2)' }} onClick={() => navigate('/progress')}>Log Water</button>
+                        </div>
+
                         {/* Stats */}
                         <div className="card">
                             <h3 style={{ fontWeight: 700, marginBottom: 16 }}>📈 This Week</h3>
-                            {[['🏋️', 'Workouts', dashData?.this_week?.workouts || 0, '#a855f7'], ['🔥', 'Calories', (dashData?.this_week?.calories || 0).toFixed(0), '#f59e0b'], ['🥗', 'Meals', dashData?.this_week?.meals || 0, '#10b981']].map(([icon, label, val, color]) => (
+                            {[['🏋️', 'Workouts', dashData?.this_week?.workouts || 0, '#a855f7'], ['🔥', 'Calories', (dashData?.this_week?.calories || 0).toFixed(0), '#f59e0b'], ['🥗', 'Meals', dashData?.this_week?.meals || 0, '#10b981'], ['💧', 'Water', dashData?.this_week?.water_glasses || 0, '#38bdf8']].map(([icon, label, val, color]) => (
                                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                                     <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{icon} {label}</span>
                                     <span style={{ fontSize: 16, fontWeight: 700, color }}>{val}</span>
