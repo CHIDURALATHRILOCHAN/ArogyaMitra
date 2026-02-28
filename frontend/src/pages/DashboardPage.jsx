@@ -35,9 +35,14 @@ export default function DashboardPage() {
         if (calStatus?.connected) return
         try {
             const { data } = await calendarApi.getAuthUrl()
-            if (data.auth_url) window.location.href = data.auth_url
+            if (data.url) {
+                window.location.href = data.url
+            } else {
+                alert(data.message || 'Failed to connect to Google Calendar. Check backend configuration.')
+            }
         } catch (e) {
             console.error('Failed to get calendar auth URL', e)
+            alert('Failed to connect to Calendar service.')
         }
     }
 
