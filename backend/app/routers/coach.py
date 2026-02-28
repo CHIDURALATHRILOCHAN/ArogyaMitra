@@ -108,11 +108,27 @@ async def adjust_plan_dynamically(
 
     # 💾 Persist newly adjusted days to the user's active workout plan in the DB
     adj_plan = adjusted.get("adjusted_plan", adjusted)
+    
     if isinstance(adj_plan, dict):
+        # AI might return real days, or just a mock note/exercises list
         new_days = adj_plan.get("days")
+        
+        # If the mock fallback just returned exercises but no days array, synthesize the days:
+        if not new_days and "exercises" in adj_plan:
+            new_days = []
+            for d in range(request.duration_days):
+                new_days.append({
+                    "day": f"Day {d+1}",
+                    "focus": "Modified Workout",
+                    "duration_minutes": 20,
+                    "calories_estimated": 150,
+                    "main_workout": [{"exercise": ex, "sets": 3, "reps": 10} for ex in adj_plan["exercises"]]
+                })
+
         if new_days and isinstance(new_days, list):
             from app.models.workout_plan import WorkoutPlan
             from sqlalchemy.orm.attributes import flag_modified
+            import copy
             
             # Fetch active workout plan
             result = await db.execute(
@@ -123,7 +139,10 @@ async def adjust_plan_dynamically(
             plan = result.scalars().first()
             
             if plan and plan.plan_data and "days" in plan.plan_data:
-                old_days = plan.plan_data["days"]
+                # Deepcopy to ensure SQLAlchemy sees the modification
+                plan_data_copy = copy.deepcopy(plan.plan_data)
+                old_days = plan_data_copy.get("days", [])
+                
                 curr_weekday = datetime.utcnow().weekday() # Mon=0, Sun=6
                 
                 # Overwrite up to duration_days into the future with AI's new days
@@ -137,10 +156,11 @@ async def adjust_plan_dynamically(
                         new_day_data["day"] = original_name
                         old_days[target_idx] = new_day_data
                 
-                plan.plan_data["days"] = old_days
+                plan_data_copy["days"] = old_days
                 if "week_summary" in adj_plan:
-                    plan.plan_data["week_summary"] = adj_plan["week_summary"]
+                    plan_data_copy["week_summary"] = adj_plan["week_summary"]
                     
+                plan.plan_data = plan_data_copy
                 flag_modified(plan, "plan_data")
                 await db.commit()
 

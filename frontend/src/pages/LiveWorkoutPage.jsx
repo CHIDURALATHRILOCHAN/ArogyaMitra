@@ -17,6 +17,8 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
     const phaseRef = useRef('idle');
     const stageRef = useRef('down');
     const repsRef = useRef(0);
+    const currentSetRef = useRef(1);
+    const exerciseRef = useRef(exercise);
     const poseRef = useRef(null);
     const animFrameRef = useRef(null);
     const restTimerRef = useRef(null);
