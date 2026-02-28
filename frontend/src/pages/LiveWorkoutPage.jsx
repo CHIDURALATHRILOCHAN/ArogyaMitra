@@ -17,13 +17,13 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
     const phaseRef = useRef('idle');
     const stageRef = useRef('down');
     const repsRef = useRef(0);
-    const currentSetRef = useRef(1);
-    const exerciseRef = useRef(exercise);
     const poseRef = useRef(null);
-    const faceDetectorRef = useRef(null);
     const animFrameRef = useRef(null);
     const restTimerRef = useRef(null);
     const multiPersonRef = useRef(false);
+
+    // Track last frame time to prevent duplicate processing
+    const lastVideoTimeRef = useRef(-1);
 
     // Keep refs in sync
     useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -73,14 +73,9 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
     };
 
     // ---------- MediaPipe onResults ----------
-    const onResultsCallback = (results) => {
-        // Drop frames if multiple people detected or not working
-        if (phaseRef.current !== 'working') return;
-        if (multiPersonRef.current) return;
-
-        if (!results.poseLandmarks) return;
-
-        const lm = results.poseLandmarks;
+    const processLandmarks = (landmarks) => {
+        // We only process if exactly 1 person is detected
+        const lm = landmarks;
         const ex = exerciseRef.current;
         const exName = (ex.exercise || '').toLowerCase();
 
@@ -129,58 +124,28 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
     const initPose = async () => {
         setLoadingModel(true);
         setStatus('Loading AI model...');
-        if (!window.Pose) {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';
-                s.crossOrigin = 'anonymous';
-                s.onload = resolve;
-                s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
-        const pose = new window.Pose({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
-        });
-        pose.setOptions({
-            modelComplexity: 1, smoothLandmarks: true,
-            enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5
-        });
-        pose.onResults(onResultsCallback);
-        await pose.initialize();
-        poseRef.current = pose;
 
-        // ---------- Init Face Detection ----------
-        if (!window.FaceDetection) {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js';
-                s.crossOrigin = 'anonymous';
-                s.onload = resolve;
-                s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
-        const faceDetector = new window.FaceDetection({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${f}`
-        });
-        faceDetector.setOptions({
-            model: 'short',
-            minDetectionConfidence: 0.5
-        });
-        faceDetector.onResults((res) => {
-            const hasMultiple = (res.detections && res.detections.length > 1);
-            if (multiPersonRef.current !== hasMultiple) {
-                multiPersonRef.current = hasMultiple;
-                setMultiPersonWarning(hasMultiple);
-            }
-        });
-        await faceDetector.initialize();
-        faceDetectorRef.current = faceDetector;
+        // Modern MediaPipe Tasks Vision API (includes built-in multi-person tracking)
+        const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8');
+        const { FilesetResolver, PoseLandmarker } = vision;
 
+        const resolver = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm"
+        );
+
+        const poseLandmarker = await PoseLandmarker.createFromOptions(resolver, {
+            baseOptions: {
+                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                delegate: "GPU"
+            },
+            runningMode: "VIDEO",
+            numPoses: 2 // YOLO-style tracking: Allow tracking of up to 2 bodies for safety warnings
+        });
+
+        poseRef.current = poseLandmarker;
         setLoadingModel(false);
         setStatus('');
-        return { pose, faceDetector };
+        return poseLandmarker;
     };
 
     const stopDetection = () => {
@@ -203,13 +168,11 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
 
     const startCamera = async () => {
         let pose = poseRef.current;
-        let fd = faceDetectorRef.current;
-        if (!pose || !fd) {
+        if (!pose) {
             try {
-                const models = await initPose();
-                pose = models.pose;
-                fd = models.faceDetector;
-            } catch {
+                pose = await initPose();
+            } catch (e) {
+                console.error(e)
                 setStatus('Failed to load AI model.'); setLoadingModel(false); return;
             }
         }
@@ -227,14 +190,34 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
 
         const detect = async () => {
             if (phaseRef.current === 'idle') return;
-            if (videoRef.current?.readyState >= 2 && poseRef.current && phaseRef.current === 'working') {
-                try {
-                    // Send to both models seamlessly 
-                    await Promise.all([
-                        poseRef.current.send({ image: videoRef.current }),
-                        faceDetectorRef.current.send({ image: videoRef.current })
-                    ]);
-                } catch { }
+            const video = videoRef.current;
+
+            if (video?.readyState >= 2 && poseRef.current && phaseRef.current === 'working') {
+                const startTimeMs = performance.now();
+                if (lastVideoTimeRef.current !== video.currentTime) {
+                    lastVideoTimeRef.current = video.currentTime;
+
+                    try {
+                        // Synchronous inference call in v2 API
+                        const results = poseRef.current.detectForVideo(video, startTimeMs);
+
+                        // YOLO-like full-body bounding box detection
+                        const numBodies = results.landmarks ? results.landmarks.length : 0;
+                        const hasMultiple = numBodies > 1;
+
+                        if (multiPersonRef.current !== hasMultiple) {
+                            multiPersonRef.current = hasMultiple;
+                            setMultiPersonWarning(hasMultiple);
+                        }
+
+                        // Only process rep counting if exactly 1 person is safely isolated in the frame
+                        if (!hasMultiple && numBodies === 1) {
+                            processLandmarks(results.landmarks[0]);
+                        }
+                    } catch (e) {
+                        console.error('Inference error', e);
+                    }
+                }
             }
             animFrameRef.current = requestAnimationFrame(detect);
         };
