@@ -45,7 +45,13 @@ export default function NutritionPage() {
 
     const loadPlan = async () => {
         setLoading(true)
-        try { const { data } = await nutritionApi.getPlan(); setMealPlan(data) } catch { setError('No meal plan found.') }
+        try {
+            const { data } = await nutritionApi.getPlan();
+            setMealPlan(data)
+        } catch {
+            setMealPlan(null)
+            setError('No meal plan found.')
+        }
         setLoading(false)
     }
 

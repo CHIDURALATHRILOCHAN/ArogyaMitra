@@ -6,6 +6,7 @@
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { usePlanStore } from './planStore'
 
 export const useAuthStore = create(
     persist(
@@ -17,7 +18,10 @@ export const useAuthStore = create(
             // ── Actions ────────────────────────────────────────────
             login: (user, token) => set({ user, token, isAuthenticated: true }),
 
-            logout: () => set({ user: null, token: null, isAuthenticated: false }),
+            logout: () => {
+                usePlanStore.getState().clearAllPlans();
+                set({ user: null, token: null, isAuthenticated: false });
+            },
 
             updateUser: (updates) => set(state => ({
                 user: state.user ? { ...state.user, ...updates } : updates

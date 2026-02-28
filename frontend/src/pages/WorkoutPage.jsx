@@ -42,7 +42,10 @@ export default function WorkoutPage() {
             const { data } = await workoutApi.getPlan()
             setWorkoutPlan(data)
             loadVideos(data.plan_data?.days?.[activeDay]?.youtube_search)
-        } catch { setError('No workout plan found. Complete the assessment first!') }
+        } catch {
+            setWorkoutPlan(null)
+            setError('No workout plan found. Complete the assessment first!')
+        }
         setLoading(false)
     }
 

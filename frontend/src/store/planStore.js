@@ -47,6 +47,14 @@ export const usePlanStore = create(
 
             clearAromiHistory: () => set({ aromiMessages: [] }),
 
+            clearAllPlans: () => set({
+                workoutPlan: null,
+                mealPlan: null,
+                assessment: null,
+                progressData: null,
+                aromiMessages: []
+            }),
+
             // Computed helpers (not persisted, called as functions)
             hasWorkoutPlan: () => !!get().workoutPlan,
             hasMealPlan: () => !!get().mealPlan,
