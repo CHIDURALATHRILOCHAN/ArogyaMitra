@@ -16,11 +16,12 @@ export default function WorkoutPage() {
     const [loading, setLoading] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [logging, setLogging] = useState(false)
+    const realTodayIndex = (new Date().getDay() + 6) % 7;
     // Make Monday = 0, Tuesday = 1, ... Sunday = 6
     const [activeDay, setActiveDay] = useState(() => {
-        const todayIndex = (new Date().getDay() + 6) % 7
-        return location.state?.targetDay === 'tomorrow' ? (todayIndex + 1) % 7 : todayIndex
+        return location.state?.targetDay === 'tomorrow' ? (realTodayIndex + 1) % 7 : realTodayIndex
     })
+    const isToday = activeDay === realTodayIndex;
     const [videos, setVideos] = useState([])
     const [expandedEx, setExpandedEx] = useState(null)
     const [error, setError] = useState('')
@@ -61,6 +62,7 @@ export default function WorkoutPage() {
     }
 
     const startLiveWorkout = async (exercise) => {
+        if (!isToday) return; // Prevent launch if not today
         setLoadingLive(exercise.exercise)
         try {
             const { data } = await workoutApi.getVideos(exercise.exercise)
@@ -131,7 +133,7 @@ export default function WorkoutPage() {
                         <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>{plan?.week_summary}</p>
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
-                        {currentDay && currentDay.duration_minutes > 0 && (
+                        {currentDay && currentDay.duration_minutes > 0 && isToday && (
                             <button className="btn-primary" onClick={logWorkout} disabled={logging || loggedToday} style={{ display: 'flex', alignItems: 'center', gap: 8, background: loggedToday ? '#10b981' : 'var(--gradient-main)' }}>
                                 {loggedToday ? <><CheckCircle2 size={16} /> {t('workout.workout_logged')}</> : logging ? <span className="spinner" style={{ width: 16, height: 16, border: '2px solid white' }} /> : t('workout.log_completion')}
                             </button>
@@ -181,9 +183,15 @@ export default function WorkoutPage() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.1)', padding: '4px 12px', borderRadius: 20 }}><Flame size={14} color="#f59e0b" /><span style={{ fontSize: 13, color: '#f59e0b', fontWeight: 600 }}>{currentDay.calories_estimated} kcal</span></div>
                                     </div>
 
-                                    <div style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        ⏳ Incomplete
-                                    </div>
+                                    {isToday ? (
+                                        <div style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            ⏳ Incomplete
+                                        </div>
+                                    ) : (
+                                        <div style={{ background: 'rgba(156,163,175,0.1)', border: '1px solid rgba(156,163,175,0.3)', color: '#9ca3af', padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            👁️ Preview Mode (Not Today)
+                                        </div>
+                                    )}
                                 </div>
 
                                 {currentDay.duration_minutes === 0 ? (
@@ -240,8 +248,8 @@ export default function WorkoutPage() {
                                                                 <button
                                                                     className="btn-primary"
                                                                     onClick={(e) => { e.stopPropagation(); startLiveWorkout(ex); }}
-                                                                    disabled={loadingLive === ex.exercise}
-                                                                    style={{ padding: '8px', paddingLeft: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}
+                                                                    disabled={loadingLive === ex.exercise || !isToday}
+                                                                    style={{ padding: '8px', paddingLeft: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, opacity: isToday ? 1 : 0.5, cursor: isToday ? 'pointer' : 'not-allowed' }}
                                                                 >
                                                                     {loadingLive === ex.exercise ? <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> : <Play size={16} />}
                                                                 </button>
