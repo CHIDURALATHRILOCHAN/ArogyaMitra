@@ -3,10 +3,12 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { Activity, Target, Zap, Trophy, TrendingUp, Scale, Dumbbell } from 'lucide-react'
 import { progressApi } from '../services/api'
 import { useAuthStore } from '../store/authStore'
+import { useTranslation } from '../store/settingsStore'
 import Navbar from '../components/Navbar'
 
 export default function ProgressPage() {
     const { user } = useAuthStore()
+    const { t } = useTranslation()
     const [dashData, setDashData] = useState(null)
     const [logForm, setLogForm] = useState({ log_date: new Date().toISOString().split('T')[0], workouts_done: 0, calories_burned: 0, healthy_meals: 0, water_glasses: 0, mood: 7, weight_kg: '', notes: '' })
     const [saving, setSaving] = useState(false)
@@ -65,9 +67,9 @@ export default function ProgressPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
                     <div>
                         <h1 style={{ fontSize: 26, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12, color: 'var(--accent-purple)' }}>
-                            <TrendingUp size={28} /> Progress Tracking
+                            <TrendingUp size={28} /> {t('progress.title') || 'Progress Tracking'}
                         </h1>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>Monitor your fitness journey with detailed analytics</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>{t('progress.subtitle') || 'Monitor your fitness journey with detailed analytics'}</p>
                     </div>
                     <select className="input" style={{ width: 'auto', background: 'var(--bg-secondary)', padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <option>Last Month</option>
@@ -95,7 +97,7 @@ export default function ProgressPage() {
                             {tab === 'Nutrition' && <span style={{ fontSize: 16 }}>♡</span>}
                             {tab === 'Body Metrics' && <span style={{ fontSize: 16 }}>◎</span>}
                             {tab === 'Achievements' && <Trophy size={16} />}
-                            {tab}
+                            {tab === 'Overview' ? t('progress.overview') || 'Overview' : tab === 'Workouts' ? t('progress.workouts') || 'Workouts' : tab === 'Nutrition' ? t('progress.nutrition') || 'Nutrition' : tab === 'Body Metrics' ? t('progress.body_metrics') || 'Body Metrics' : t('progress.achievements') || 'Achievements'}
                         </button>
                     ))}
                 </div>
@@ -105,10 +107,10 @@ export default function ProgressPage() {
                         {/* Metric Cards Grid */}
                         <div className="grid-4" style={{ marginBottom: 32, gap: 20 }}>
                             {[
-                                { label: 'Total Workouts', value: dashData?.total_workouts || 0, icon: <Activity size={24} color="#fff" />, color: '#3b82f6', change: '- 0%', changeColor: '#ef4444' },
-                                { label: 'Weight Loss', value: '0 kg', icon: <Scale size={24} color="#fff" />, color: '#10b981', change: '- 0%', changeColor: '#ef4444' },
-                                { label: 'Calories Burned', value: dashData?.this_month?.calories_burned?.toFixed(0) || 0, icon: <Zap size={24} color="#fff" />, color: '#f97316', change: '↗ 10%', changeColor: '#10b981' },
-                                { label: 'BMI', value: '27.7', icon: <Target size={24} color="#fff" />, color: '#a855f7', change: '- 0%', changeColor: '#ef4444' },
+                                { label: t('progress.total_workouts') || 'Total Workouts', value: dashData?.total_workouts || 0, icon: <Activity size={24} color="#fff" />, color: '#3b82f6', change: '- 0%', changeColor: '#ef4444' },
+                                { label: t('progress.weight_loss') || 'Weight Loss', value: '0 kg', icon: <Scale size={24} color="#fff" />, color: '#10b981', change: '- 0%', changeColor: '#ef4444' },
+                                { label: t('progress.calories_burned') || 'Calories Burned', value: dashData?.this_month?.calories_burned?.toFixed(0) || 0, icon: <Zap size={24} color="#fff" />, color: '#f97316', change: '↗ 10%', changeColor: '#10b981' },
+                                { label: t('progress.bmi') || 'BMI', value: '27.7', icon: <Target size={24} color="#fff" />, color: '#a855f7', change: '- 0%', changeColor: '#ef4444' },
                             ].map((s, i) => (
                                 <div key={i} className="card" style={{ padding: 24, position: 'relative', border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -127,14 +129,14 @@ export default function ProgressPage() {
                             {/* Charts */}
                             <div className="card">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                    <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 20 }}>📊</span> Progress Tracking</h3>
+                                    <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 20 }}>📊</span> {t('progress.title') || 'Progress Tracking'}</h3>
                                     <div className="tabs" style={{ padding: 2 }}>
-                                        {[['calories', '🔥 Calories'], ['workouts', '💪 Workouts'], ['mood', '😊 Mood']].map(([key, label]) => (
+                                        {[['calories', `🔥 ${t('progress.calories') || 'Calories'}`], ['workouts', `💪 ${t('progress.workouts') || 'Workouts'}`], ['mood', `😊 ${t('progress.mood') || 'Mood'}`]].map(([key, label]) => (
                                             <button key={key} className={`tab ${activeChart === key ? 'active' : ''}`} onClick={() => setActiveChart(key)} style={{ fontSize: 12, padding: '4px 12px' }}>{label}</button>
                                         ))}
                                     </div>
                                 </div>
-                                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>Your detailed progress charts and analytics appear here as you log activities.</p>
+                                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>{t('progress.chart_empty') || 'Your detailed progress charts and analytics appear here as you log activities.'}</p>
 
                                 {chartData.length ? (
                                     <ResponsiveContainer width="100%" height={260}>
@@ -160,13 +162,13 @@ export default function ProgressPage() {
                                             </defs>
                                         </BarChart>
                                     </ResponsiveContainer>
-                                ) : <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Log progress to see your chart</div>}
+                                ) : <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>{t('progress.log_empty') || 'Log progress to see your chart'}</div>}
                             </div>
 
                             {/* Log Form */}
                             <div className="card">
-                                <h3 style={{ fontWeight: 700, marginBottom: 20 }}>📝 Log Today's Activity</h3>
-                                {saved && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, color: '#10b981', fontSize: 14 }}>✅ Progress logged successfully!</div>}
+                                <h3 style={{ fontWeight: 700, marginBottom: 20 }}>📝 {t('progress.log_today') || 'Log Today\'s Activity'}</h3>
+                                {saved && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, color: '#10b981', fontSize: 14 }}>✅ {t('progress.log_success') || 'Progress logged successfully!'}</div>}
                                 <form onSubmit={handleLog}>
                                     {[['Date', 'log_date', 'date', null], ['Workouts Done', 'workouts_done', 'number', { min: 0, max: 10 }], ['Calories Burned', 'calories_burned', 'number', { min: 0 }], ['Healthy Meals', 'healthy_meals', 'number', { min: 0, max: 10 }], ['Weight (kg)', 'weight_kg', 'number', { step: 0.1 }]].map(([label, key, type, extra]) => (
                                         <div key={key} className="input-group">
@@ -179,7 +181,7 @@ export default function ProgressPage() {
                                     <div className="card" style={{ background: 'rgba(56,189,248,0.05)', borderColor: 'rgba(56,189,248,0.2)', marginBottom: 20, padding: 16 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                             <label className="input-label" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8' }}>
-                                                <span style={{ fontSize: 18 }}>💧</span> Water Intake (250ml glasses)
+                                                <span style={{ fontSize: 18 }}>💧</span> {t('progress.water_intake') || 'Water Intake (250ml glasses)'}
                                             </label>
                                             <div style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8' }}>
                                                 {logForm.water_glasses} <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>/ {dashData?.daily_water_target_glasses || 8}</span>
@@ -212,16 +214,16 @@ export default function ProgressPage() {
                                         </div>
                                     </div>
                                     <div className="input-group">
-                                        <label className="input-label">Mood (1-10): {logForm.mood}</label>
+                                        <label className="input-label">{t('progress.mood') || 'Mood'} (1-10): {logForm.mood}</label>
                                         <input type="range" min="1" max="10" value={logForm.mood} onChange={e => setLogForm({ ...logForm, mood: e.target.value })} style={{ width: '100%', accentColor: 'var(--accent-purple)' }} />
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}><span>😞</span><span>😊</span></div>
                                     </div>
                                     <div className="input-group">
-                                        <label className="input-label">Notes</label>
-                                        <input className="input" placeholder="How did you feel today?" value={logForm.notes} onChange={e => setLogForm({ ...logForm, notes: e.target.value })} />
+                                        <label className="input-label">{t('progress.notes') || 'Notes'}</label>
+                                        <input className="input" placeholder={t('progress.how_did_you_feel') || "How did you feel today?"} value={logForm.notes} onChange={e => setLogForm({ ...logForm, notes: e.target.value })} />
                                     </div>
                                     <button className="btn-primary" type="submit" disabled={saving} style={{ width: '100%' }}>
-                                        {saving ? 'Saving...' : '💾 Save Progress'}
+                                        {saving ? (t('progress.saving') || 'Saving...') : `💾 ${t('progress.save') || 'Save Progress'}`}
                                     </button>
                                 </form>
                             </div>
@@ -235,16 +237,16 @@ export default function ProgressPage() {
                         <div className="card" style={{ padding: '24px 32px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                 <h3 style={{ fontSize: 20, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <Trophy size={22} color="#f59e0b" /> Achievement Progress
+                                    <Trophy size={22} color="#f59e0b" /> {t('progress.achievement_progress') || 'Achievement Progress'}
                                 </h3>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent-purple)' }}>{unlockedCount}/11</div>
-                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Achievements Unlocked</div>
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('progress.unlocked') || 'Achievements Unlocked'}</div>
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, marginTop: 16 }}>
-                                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Overall Completion</span>
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{t('progress.overall_completion') || 'Overall Completion'}</span>
                                 <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{Math.round((unlockedCount / 11) * 100)}%</span>
                             </div>
                             <div className="progress-bar" style={{ height: 12, background: 'rgba(255,255,255,0.05)', borderRadius: 20 }}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Flame, Calendar, CheckCircle, Heart, Zap, TrendingUp, MessageCircle, Activity } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useTranslation } from '../store/settingsStore'
 import { progressApi, calendarApi, assessmentApi } from '../services/api'
 import Navbar from '../components/Navbar'
 
@@ -10,6 +11,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 export default function DashboardPage() {
     const navigate = useNavigate()
     const { user } = useAuthStore()
+    const { t } = useTranslation()
     const [dashData, setDashData] = useState(null)
     const [calStatus, setCalStatus] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -63,8 +65,8 @@ export default function DashboardPage() {
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
                     <div>
-                        <h1 style={{ fontSize: 28, fontWeight: 800 }}>Welcome back, <span className="gradient-text">{user?.full_name || user?.username}!</span></h1>
-                        <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Ready to continue your fitness journey? Let's make today count 💪</p>
+                        <h1 style={{ fontSize: 28, fontWeight: 800 }}>{t('dashboard.welcome')}, <span className="gradient-text">{user?.full_name || user?.username}!</span></h1>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{t('dashboard.subtitle') || "Ready to continue your fitness journey? Let's make today count 💪"}</p>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '10px 16px' }}>
                         <Flame size={20} color="#f59e0b" />
@@ -169,7 +171,7 @@ export default function DashboardPage() {
                         {/* Tomorrow's Schedule */}
                         <div className="card">
                             <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Calendar size={18} color="var(--accent-purple)" /> Tomorrow's Schedule
+                                <Calendar size={18} color="var(--accent-purple)" /> {t('dashboard.tomorrow_schedule')}
                             </h3>
                             {assessmentStatus?.completed ? (
                                 <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -195,7 +197,7 @@ export default function DashboardPage() {
                         {/* Hydration Tracker */}
                         <div className="card" style={{ borderColor: 'rgba(56,189,248,0.2)' }}>
                             <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 18 }}>💧</span> Daily Hydration
+                                <span style={{ fontSize: 18 }}>💧</span> {t('dashboard.daily_hydration')}
                             </h3>
 
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 12 }}>
@@ -216,7 +218,7 @@ export default function DashboardPage() {
 
                         {/* Stats */}
                         <div className="card">
-                            <h3 style={{ fontWeight: 700, marginBottom: 16 }}>📈 This Week</h3>
+                            <h3 style={{ fontWeight: 700, marginBottom: 16 }}>📈 {t('dashboard.this_week')}</h3>
                             {[['🏋️', 'Workouts', dashData?.this_week?.workouts || 0, '#a855f7'], ['🔥', 'Calories', (dashData?.this_week?.calories || 0).toFixed(0), '#f59e0b'], ['🥗', 'Meals', dashData?.this_week?.meals || 0, '#10b981'], ['💧', 'Water', dashData?.this_week?.water_glasses || 0, '#38bdf8']].map(([icon, label, val, color]) => (
                                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                                     <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{icon} {label}</span>

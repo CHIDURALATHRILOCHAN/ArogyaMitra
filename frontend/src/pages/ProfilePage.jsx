@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Settings, Bell, Shield, Edit2, Camera, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useSettingsStore, useTranslation } from '../store/settingsStore'
+import { authApi } from '../services/api'
 import Navbar from '../components/Navbar'
 
 export default function ProfilePage() {
-    const { user } = useAuthStore()
+    const { user, setUser } = useAuthStore()
+    const { theme, setTheme, language, setLanguage, units, setUnits } = useSettingsStore()
+    const { t } = useTranslation()
     const [isEditing, setIsEditing] = useState(false)
-    const [activeTab, setActiveTab] = useState('Profile')
+    const [activeTab, setActiveTab] = useState('profile.tab_profile')
     const [toastMessage, setToastMessage] = useState('')
 
     // Simulate user stats (these could be fetched from progressApi in reality)
@@ -29,8 +33,29 @@ export default function ProfilePage() {
 
     const handlePhotoUpload = () => {
         if (!isEditing) return;
-        setToastMessage('Profile photo uploaded successfully!')
+        setToastMessage(t('profile.toast_photo') || 'Profile photo uploaded successfully!')
         setTimeout(() => setToastMessage(''), 3000)
+    }
+
+    const handleSaveProfile = async () => {
+        if (isEditing) {
+            try {
+                const res = await authApi.updateProfile({
+                    full_name: formData.full_name,
+                    age: parseInt(formData.age),
+                    gender: formData.gender,
+                    height_cm: parseFloat(formData.height_cm),
+                    weight_kg: parseFloat(formData.weight_kg)
+                })
+                setUser(res.data) // Update global auth store with fresh DB row
+                setToastMessage(t('profile.toast_save') || 'Profile updated successfully!')
+                setTimeout(() => setToastMessage(''), 3000)
+            } catch (error) {
+                console.error('Failed to update profile:', error)
+                setToastMessage(t('profile.toast_err') || 'Error saving profile data')
+            }
+        }
+        setIsEditing(!isEditing)
     }
 
     return (
@@ -50,44 +75,44 @@ export default function ProfilePage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
                     <div>
                         <h1 style={{ fontSize: 26, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12, color: 'var(--accent-purple)' }}>
-                            <User size={28} /> My Profile
+                            <User size={28} /> {t('profile.title') || 'My Profile'}
                         </h1>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>Manage your account settings and preferences</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{t('profile.subtitle') || 'Manage your account settings and preferences'}</p>
                     </div>
 
                     <button
-                        onClick={() => setIsEditing(!isEditing)}
+                        onClick={handleSaveProfile}
                         style={{ background: isEditing ? 'rgba(168,85,247,0.1)' : 'var(--bg-secondary)', border: `1px solid ${isEditing ? 'var(--accent-purple)' : 'var(--border)'}`, color: isEditing ? 'var(--accent-purple)' : 'var(--text-primary)', padding: '8px 16px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
                     >
-                        <Edit2 size={14} /> {isEditing ? 'Save Changes' : 'Edit Profile'}
+                        <Edit2 size={14} /> {isEditing ? (t('profile.save') || 'Save Changes') : (t('profile.edit') || 'Edit Profile')}
                     </button>
                 </div>
 
                 {/* Horizontal Tabs */}
                 <div className="hide-scroll" style={{ display: 'flex', background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border)', padding: '6px', marginBottom: 24, gap: 4, overflowX: 'auto' }}>
                     {[
-                        { name: 'Profile', icon: <User size={14} /> },
-                        { name: 'Settings', icon: <Settings size={14} /> },
-                        { name: 'Notifications', icon: <Bell size={14} /> },
-                        { name: 'Privacy', icon: <Shield size={14} /> }
+                        { id: 'profile.tab_profile', icon: <User size={14} /> },
+                        { id: 'profile.tab_settings', icon: <Settings size={14} /> },
+                        { id: 'profile.tab_notifications', icon: <Bell size={14} /> },
+                        { id: 'profile.tab_privacy', icon: <Shield size={14} /> }
                     ].map(tab => (
-                        <button key={tab.name}
-                            onClick={() => setActiveTab(tab.name)}
+                        <button key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
                             style={{
                                 flex: 1, minWidth: 120, padding: '10px 16px', borderRadius: 8, border: 'none',
-                                background: activeTab === tab.name ? '#ffffff' : 'transparent',
-                                color: activeTab === tab.name ? '#000000' : 'var(--text-secondary)',
-                                fontWeight: activeTab === tab.name ? 700 : 500,
+                                background: activeTab === tab.id ? '#ffffff' : 'transparent',
+                                color: activeTab === tab.id ? '#000000' : 'var(--text-secondary)',
+                                fontWeight: activeTab === tab.id ? 700 : 500,
                                 fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                 whiteSpace: 'nowrap'
                             }}>
-                            {tab.icon} {tab.name}
+                            {tab.icon} {t(tab.id)}
                         </button>
                     ))}
                 </div>
 
-                {activeTab === 'Profile' && (
+                {activeTab === 'profile.tab_profile' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 350px) 1fr', gap: 24, alignItems: 'start' }}>
 
                         {/* Avatar & Summary Card */}
@@ -121,27 +146,27 @@ export default function ProfilePage() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, width: '100%', borderTop: '1px solid var(--border)', paddingTop: 24 }}>
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 16, fontWeight: 800 }}>{stats.workouts}</div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Workouts</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('profile.workouts') || 'Workouts'}</div>
                                 </div>
                                 <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: 16, fontWeight: 800 }}>{stats.activeDays}</div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Active Days</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('profile.active_days') || 'Active Days'}</div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 16, fontWeight: 800 }}>{stats.weightLost}</div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Lost</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('profile.lost') || 'Lost'}</div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Personal Information Form */}
                         <div className="card" style={{ padding: '32px 24px' }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 24 }}>Personal Information</h3>
+                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 24 }}>{t('profile.personal_info') || 'Personal Information'}</h3>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                                 { /* Full Name */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Full Name</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.full_name') || 'Full Name'}</label>
                                     <input
                                         type="text"
                                         value={formData.full_name}
@@ -153,7 +178,7 @@ export default function ProfilePage() {
 
                                 { /* Email */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Email</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.email') || 'Email'}</label>
                                     <input
                                         type="email"
                                         value={formData.email}
@@ -165,7 +190,7 @@ export default function ProfilePage() {
 
                                 { /* Phone */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Phone</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.phone') || 'Phone'}</label>
                                     <input
                                         type="text"
                                         value={formData.phone}
@@ -177,7 +202,7 @@ export default function ProfilePage() {
 
                                 { /* Age */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Age</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.age') || 'Age'}</label>
                                     <input
                                         type="number"
                                         value={formData.age}
@@ -189,22 +214,22 @@ export default function ProfilePage() {
 
                                 { /* Gender */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Gender</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.gender') || 'Gender'}</label>
                                     <select
                                         value={formData.gender}
                                         onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                                         disabled={!isEditing}
                                         style={{ width: '100%', padding: '12px 16px', background: isEditing ? '#ffffff' : 'rgba(255,255,255,0.03)', border: `1px solid ${isEditing ? '#e2e8f0' : 'var(--border)'}`, borderRadius: 8, color: isEditing ? '#0f172a' : 'var(--text-primary)', fontSize: 14, fontWeight: 500, WebkitAppearance: 'none' }}
                                     >
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                        <option value="Other">Other</option>
+                                        <option value="Male">{t('assessment.opt_male') || 'Male'}</option>
+                                        <option value="Female">{t('assessment.opt_female') || 'Female'}</option>
+                                        <option value="Other">{t('assessment.opt_other') || 'Other'}</option>
                                     </select>
                                 </div>
 
                                 { /* Height */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Height (cm)</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.height') || 'Height (cm)'}</label>
                                     <input
                                         type="number"
                                         value={formData.height_cm}
@@ -216,7 +241,7 @@ export default function ProfilePage() {
 
                                 { /* Weight */}
                                 <div style={{ gridColumn: '1 / -1', width: 'calc(50% - 12px)' }}>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Weight (kg)</label>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{t('profile.weight') || 'Weight (kg)'}</label>
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             type="number"
@@ -237,12 +262,122 @@ export default function ProfilePage() {
                     </div>
                 )}
 
-                {/* Fallbacks for other tabs */}
-                {['Settings', 'Notifications', 'Privacy'].includes(activeTab) && (
-                    <div className="card" style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-                        <div style={{ fontSize: 48, marginBottom: 16 }}>🚧</div>
-                        <h3 style={{ fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>{activeTab} Coming Soon</h3>
-                        <p style={{ fontSize: 14 }}>We're building out these preference panels next.</p>
+                {/* Settings Tab */}
+                {activeTab === 'profile.tab_settings' && (
+                    <div className="card" style={{ padding: '32px 24px' }}>
+                        <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <Settings size={20} color="var(--accent-purple)" /> {t('profile.app_settings') || 'App Settings'}
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 16 }}>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: 15 }}>{t('profile.theme') || 'App Theme'}</div>
+                                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{t('profile.theme_desc') || 'Choose your preferred color mode'}</div>
+                                </div>
+                                <select className="input" style={{ width: 140 }} value={theme} onChange={(e) => setTheme(e.target.value)}>
+                                    <option value="System Default">{t('profile.theme_sys') || 'System Default'}</option>
+                                    <option value="Dark Mode">{t('profile.theme_dark') || 'Dark Mode'}</option>
+                                    <option value="Light Mode">{t('profile.theme_light') || 'Light Mode'}</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 16 }}>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: 15 }}>{t('profile.lang') || 'App Language'}</div>
+                                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{t('profile.lang_desc') || 'Select the display language'}</div>
+                                </div>
+                                <select className="input" style={{ width: 140 }} value={language} onChange={(e) => setLanguage(e.target.value)}>
+                                    <option value="English">English</option>
+                                    <option value="Hindi (हिंदी)">Hindi (हिंदी)</option>
+                                    <option value="Telugu (తెలుగు)">Telugu (తెలుగు)</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8 }}>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: 15 }}>{t('profile.units') || 'Measurement Units'}</div>
+                                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{t('profile.units_desc') || 'Metric (kg/cm) or Imperial (lb/in)'}</div>
+                                </div>
+                                <select className="input" style={{ width: 140 }} value={units} onChange={(e) => setUnits(e.target.value)}>
+                                    <option value="Metric (kg, cm)">{t('profile.metric') || 'Metric (kg, cm)'}</option>
+                                    <option value="Imperial (lbs, in)">{t('profile.imperial') || 'Imperial (lbs, in)'}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Notifications Tab */}
+                {activeTab === 'profile.tab_notifications' && (
+                    <div className="card" style={{ padding: '32px 24px' }}>
+                        <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <Bell size={20} color="#f59e0b" /> {t('profile.notif_prefs') || 'Notification Preferences'}
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                            {[
+                                { titleKey: 'profile.notif_workout', descKey: 'profile.notif_workout_desc', title: 'Workout Reminders', desc: 'Daily push notifications to start your workout', defaultChecked: true },
+                                { titleKey: 'profile.notif_meal', descKey: 'profile.notif_meal_desc', title: 'Meal Time Alerts', desc: 'Alerts before breakfast, lunch, and dinner', defaultChecked: true },
+                                { titleKey: 'profile.notif_coach', descKey: 'profile.notif_coach_desc', title: 'AROMI Coach Updates', desc: 'Messages and check-ins from your AI Coach', defaultChecked: true },
+                                { titleKey: 'profile.notif_weekly', descKey: 'profile.notif_weekly_desc', title: 'Weekly Progress Report', desc: 'Email summaries of your week\'s activity', defaultChecked: false }
+                            ].map((item, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: idx < 3 ? '1px solid var(--border)' : 'none', paddingBottom: idx < 3 ? 16 : 8 }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: 15 }}>{t(item.titleKey) || item.title}</div>
+                                        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{t(item.descKey) || item.desc}</div>
+                                    </div>
+                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                        <input type="checkbox" defaultChecked={item.defaultChecked} style={{ width: 18, height: 18, accentColor: 'var(--accent-purple)' }} />
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Privacy Tab */}
+                {activeTab === 'profile.tab_privacy' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        <div className="card" style={{ padding: '32px 24px' }}>
+                            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Shield size={20} color="#10b981" /> {t('profile.privacy_settings') || 'Data & Privacy Settings'}
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                {[
+                                    { titleKey: 'profile.priv_public', descKey: 'profile.priv_public_desc', title: 'Public Profile', desc: 'Allow other users to view your achievements', defaultChecked: false },
+                                    { titleKey: 'profile.priv_board', descKey: 'profile.priv_board_desc', title: 'Leaderboard Opt-in', desc: 'Show your points on the community leaderboard', defaultChecked: true },
+                                    { titleKey: 'profile.priv_aromi', descKey: 'profile.priv_aromi_desc', title: 'Share Data with AROMI', desc: 'Allow AI to use your history for better plans', defaultChecked: true }
+                                ].map((item, idx) => (
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: idx < 2 ? '1px solid var(--border)' : 'none', paddingBottom: idx < 2 ? 16 : 8 }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: 15 }}>{t(item.titleKey) || item.title}</div>
+                                            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{t(item.descKey) || item.desc}</div>
+                                        </div>
+                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                            <input type="checkbox" defaultChecked={item.defaultChecked} style={{ width: 18, height: 18, accentColor: '#10b981' }} />
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Danger Zone */}
+                        <div className="card" style={{ padding: '32px 24px', borderColor: 'rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: '#ef4444' }}>{t('profile.danger') || 'Danger Zone'}</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: 14 }}>{t('profile.export') || 'Export Your Data'}</div>
+                                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('profile.export_desc') || 'Download a copy of your personal data'}</div>
+                                    </div>
+                                    <button className="btn-secondary" style={{ fontSize: 12 }}>{t('profile.req_export') || 'Request Export'}</button>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(239, 68, 68, 0.1)', paddingTop: 16 }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: 14, color: '#ef4444' }}>{t('profile.delete') || 'Delete Account'}</div>
+                                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('profile.delete_desc') || 'Permanently delete your account and all data'}</div>
+                                    </div>
+                                    <button className="btn-secondary" style={{ fontSize: 12, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)' }}>{t('profile.delete') || 'Delete Account'}</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { RefreshCw, ShoppingCart, Apple, Beef, Wheat } from 'lucide-react'
 import { nutritionApi, progressApi } from '../services/api'
 import { usePlanStore } from '../store/planStore'
+import { useTranslation } from '../store/settingsStore'
 import Navbar from '../components/Navbar'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +11,7 @@ const MACRO_COLORS = { protein: '#a855f7', carbs: '#06b6d4', fat: '#f59e0b' }
 
 export default function NutritionPage() {
     const navigate = useNavigate()
+    const { t } = useTranslation()
     const { mealPlan, setMealPlan } = usePlanStore()
     const [loading, setLoading] = useState(false)
     const [generating, setGenerating] = useState(false)
@@ -75,7 +77,7 @@ export default function NutritionPage() {
     const currentDay = days[activeDay]
 
     if (loading) return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}><Navbar /><div className="spinner" /></div>
-    if (error) return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}><Navbar /><div style={{ textAlign: 'center', padding: '80px 24px' }}><p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>{error}</p><button className="btn-primary" onClick={() => navigate('/assessment')}>Take Assessment</button></div></div>
+    if (error) return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}><Navbar /><div style={{ textAlign: 'center', padding: '80px 24px' }}><p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>{t('nutrition.no_plan') || error}</p><button className="btn-primary" onClick={() => navigate('/assessment')}>Take Assessment</button></div></div>
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
@@ -88,7 +90,7 @@ export default function NutritionPage() {
                     <div style={{ background: 'var(--bg-secondary)', borderRadius: 20, padding: 32, maxWidth: 680, width: '90%', maxHeight: '85vh', overflowY: 'auto', border: '1px solid var(--border)' }}
                         onClick={e => e.stopPropagation()}>
                         {recipeModal.loading ? (
-                            <div style={{ textAlign: 'center', padding: 48 }}><div className="spinner" style={{ margin: '0 auto 16px' }} /><p>Fetching recipe from Spoonacular...</p></div>
+                            <div style={{ textAlign: 'center', padding: 48 }}><div className="spinner" style={{ margin: '0 auto 16px' }} /><p>{t('nutrition.fetching_recipe') || 'Fetching recipe from Spoonacular...'}</p></div>
                         ) : recipeModal.error ? (
                             <><h2>{recipeModal.title}</h2><p style={{ color: 'var(--text-secondary)', marginTop: 16 }}>{recipeModal.error}</p></>
                         ) : (
@@ -114,7 +116,7 @@ export default function NutritionPage() {
                                 </div>
                                 {recipeModal.ingredients?.length > 0 && (
                                     <div style={{ marginBottom: 20 }}>
-                                        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, color: 'var(--accent-cyan)' }}>🥗 Ingredients</h3>
+                                        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, color: 'var(--accent-cyan)' }}>🥗 {t('nutrition.ingredients') || 'Ingredients'}</h3>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                             {recipeModal.ingredients.map((ing, i) => (
                                                 <span key={i} style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)', borderRadius: 20, padding: '4px 12px', fontSize: 13 }}>
@@ -126,7 +128,7 @@ export default function NutritionPage() {
                                 )}
                                 {recipeModal.instructions?.length > 0 && (
                                     <div>
-                                        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, color: 'var(--accent-green)' }}>📋 Instructions</h3>
+                                        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, color: 'var(--accent-green)' }}>📋 {t('nutrition.instructions') || 'Instructions'}</h3>
                                         <ol style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                                             {recipeModal.instructions.map(s => (
                                                 <li key={s.step} style={{ display: 'flex', gap: 12 }}>
@@ -140,7 +142,7 @@ export default function NutritionPage() {
                                 {recipeModal.sourceUrl && (
                                     <a href={recipeModal.sourceUrl} target="_blank" rel="noopener noreferrer"
                                         style={{ display: 'inline-block', marginTop: 20, fontSize: 13, color: 'var(--accent-purple)' }}>
-                                        View Full Recipe ↗
+                                        {t('nutrition.view_recipe') || 'View Full Recipe'} ↗
                                     </a>
                                 )}
                             </>
@@ -154,10 +156,10 @@ export default function NutritionPage() {
             <div className="container" style={{ padding: '40px 24px', maxWidth: 1100, margin: '0 auto' }}>
                 {/* Header */}
                 <div style={{ marginBottom: 32 }}>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-purple)', marginBottom: 8 }}>Indian Nutrition Plans</h1>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-purple)', marginBottom: 8 }}>{t('nutrition.title')}</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-                        AI-powered traditional Indian meal planning for optimal nutrition 💚
-                        <br /><span style={{ fontSize: 12, opacity: 0.6 }}>Daily target: {plan?.daily_calorie_target} kcal</span>
+                        {t('nutrition.subtitle')}
+                        <br /><span style={{ fontSize: 12, opacity: 0.6 }}>{t('nutrition.daily_target')} {plan?.daily_calorie_target} kcal</span>
                     </p>
                 </div>
 
@@ -191,7 +193,7 @@ export default function NutritionPage() {
                                 {tab === 'Today' && <span>🥣</span>}
                                 {tab === 'This Week' && <span>📅</span>}
                                 {tab === 'Shopping List' && <ShoppingCart size={16} />}
-                                {tab}
+                                {tab === 'Today' ? t('nutrition.today') : tab === 'This Week' ? t('nutrition.this_week') : t('nutrition.shopping_list')}
                             </button>
                         ))}
                     </div>
@@ -203,7 +205,7 @@ export default function NutritionPage() {
                     {activeTab === 'Shopping List' && (
                         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '32px', maxWidth: 900 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                <h2 style={{ fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}><ShoppingCart size={20} /> Weekly Shopping List</h2>
+                                <h2 style={{ fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}><ShoppingCart size={20} /> {t('nutrition.weekly_shopping') || 'Weekly Shopping List'}</h2>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                 {Object.entries(grocery).map(([category, items]) => (
@@ -244,7 +246,7 @@ export default function NutritionPage() {
                                                         }}
                                                         onClick={() => window.open(`https://blinkit.com/s/?q=${encodeURIComponent(item)}`, '_blank', 'noopener,noreferrer')}
                                                     >
-                                                        <ShoppingCart size={15} /> Buy <span style={{ fontSize: 14 }}>↗</span>
+                                                        <ShoppingCart size={15} /> {t('nutrition.buy') || 'Buy'} <span style={{ fontSize: 14 }}>↗</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -324,7 +326,7 @@ export default function NutritionPage() {
                                                 <button
                                                     onClick={() => viewRecipe(meal.name)}
                                                     style={{ marginTop: 12, width: '100%', padding: '8px 12px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 8, color: 'var(--accent-purple)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                                                    🍳 View Full Recipe
+                                                    🍳 {t('nutrition.view_recipe') || 'View Full Recipe'}
                                                 </button>
                                             </div>
                                         </div>
@@ -335,7 +337,7 @@ export default function NutritionPage() {
                             {/* Daily Summary Sidebar */}
                             <div style={{ width: 340, flexShrink: 0 }}>
                                 <div className="card" style={{ padding: 24 }}>
-                                    <h3 style={{ fontWeight: 700, marginBottom: 20, fontSize: 18, display: 'flex', alignItems: 'center', gap: 8 }}>📊 Daily Summary<br />Breakdown</h3>
+                                    <h3 style={{ fontWeight: 700, marginBottom: 20, fontSize: 18, display: 'flex', alignItems: 'center', gap: 8 }}>📊 {t('nutrition.daily_summary') || 'Daily Summary Breakdown'}</h3>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                         {currentDay.daily_totals && Object.entries(currentDay.daily_totals).map(([key, val]) => (
@@ -382,7 +384,7 @@ export default function NutritionPage() {
                                             return (
                                                 <div key={mealType} style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: 16, border: '1px solid var(--border)', position: 'relative' }}>
                                                     {isMealCompleted && (
-                                                        <div style={{ position: 'absolute', top: 12, right: 12, color: 'var(--accent-green)', fontSize: 12, fontWeight: 700 }}>✓ Done</div>
+                                                        <div style={{ position: 'absolute', top: 12, right: 12, color: 'var(--accent-green)', fontSize: 12, fontWeight: 700 }}>✓ {t('nutrition.done') || 'Done'}</div>
                                                     )}
                                                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'capitalize', marginBottom: 4 }}>
                                                         {MEAL_ICONS[mealType]} {mealType}

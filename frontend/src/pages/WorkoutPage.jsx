@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Play, ChevronDown, ChevronUp, Dumbbell, Clock, Flame, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { workoutApi, progressApi } from '../services/api'
 import { usePlanStore } from '../store/planStore'
+import { useTranslation } from '../store/settingsStore'
 import Navbar from '../components/Navbar'
 import LiveWorkoutPage from './LiveWorkoutPage'
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal'
@@ -10,6 +11,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 export default function WorkoutPage() {
     const navigate = useNavigate()
     const location = useLocation()
+    const { t } = useTranslation()
     const { workoutPlan, setWorkoutPlan } = usePlanStore()
     const [loading, setLoading] = useState(false)
     const [generating, setGenerating] = useState(false)
@@ -114,7 +116,7 @@ export default function WorkoutPage() {
     const currentDay = days[activeDay]
 
     if (loading) return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}><Navbar /><div className="spinner" /><p style={{ color: 'var(--text-secondary)' }}>Loading your workout plan...</p></div>
-    if (error) return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}><Navbar /><div style={{ textAlign: 'center', padding: '80px 24px' }}><div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div><p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>{error}</p><button className="btn-primary" onClick={() => navigate('/assessment')}>Take Assessment</button></div></div>
+    if (error) return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}><Navbar /><div style={{ textAlign: 'center', padding: '80px 24px' }}><div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div><p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>{t('workout.no_plan') || error}</p><button className="btn-primary" onClick={() => navigate('/assessment')}>Take Assessment</button></div></div>
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
@@ -122,17 +124,17 @@ export default function WorkoutPage() {
             <div className="container" style={{ padding: '32px 24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
                     <div>
-                        <h1 style={{ fontSize: 26, fontWeight: 800 }}>💪 Your Workout Plan</h1>
+                        <h1 style={{ fontSize: 26, fontWeight: 800 }}>💪 {t('workout.title')}</h1>
                         <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>{plan?.week_summary}</p>
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
                         {currentDay && currentDay.duration_minutes > 0 && (
                             <button className="btn-primary" onClick={logWorkout} disabled={logging || loggedToday} style={{ display: 'flex', alignItems: 'center', gap: 8, background: loggedToday ? '#10b981' : 'var(--gradient-main)' }}>
-                                {loggedToday ? <><CheckCircle2 size={16} /> Workout Logged!</> : logging ? <span className="spinner" style={{ width: 16, height: 16, border: '2px solid white' }} /> : 'Log Completion'}
+                                {loggedToday ? <><CheckCircle2 size={16} /> {t('workout.workout_logged')}</> : logging ? <span className="spinner" style={{ width: 16, height: 16, border: '2px solid white' }} /> : t('workout.log_completion')}
                             </button>
                         )}
                         <button className="btn-secondary" onClick={generateNew} disabled={generating} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <RefreshCw size={16} style={{ animation: generating ? 'spin 1s linear infinite' : 'none' }} /> {generating ? 'Regenerating...' : 'New Plan'}
+                            <RefreshCw size={16} style={{ animation: generating ? 'spin 1s linear infinite' : 'none' }} /> {generating ? t('workout.regenerating') : t('workout.new_plan')}
                         </button>
                     </div>
                 </div>
@@ -184,8 +186,8 @@ export default function WorkoutPage() {
                                 {currentDay.duration_minutes === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                                         <div style={{ fontSize: 48, marginBottom: 12 }}>😴</div>
-                                        <h3>Rest Day!</h3>
-                                        <p style={{ marginTop: 8, fontSize: 14 }}>Take it easy. Recovery is part of progress!</p>
+                                        <h3>{t('workout.rest_day') || 'Rest Day!'}</h3>
+                                        <p style={{ marginTop: 8, fontSize: 14 }}>{t('workout.rest_desc') || 'Take it easy. Recovery is part of progress!'}</p>
                                     </div>
                                 ) : (
                                     <>
@@ -196,7 +198,7 @@ export default function WorkoutPage() {
                                             </div>
                                         )}
                                         <div style={{ marginBottom: 20 }}>
-                                            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-purple)', marginBottom: 10 }}>💪 Main Workout</h3>
+                                            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-purple)', marginBottom: 10 }}>💪 {t('workout.today_workout') || 'Main Workout'}</h3>
                                             {currentDay.main_workout?.map((ex, i) => {
                                                 const isCompleted = completedExercises.includes(ex.exercise);
                                                 return (
@@ -265,7 +267,7 @@ export default function WorkoutPage() {
                         {/* Video panel */}
                         <div>
                             <div className="card">
-                                <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Play size={18} color="var(--accent-purple)" /> Exercise Videos</h3>
+                                <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Play size={18} color="var(--accent-purple)" /> {t('workout.guided_videos') || 'Exercise Videos'}</h3>
                                 {videos.length ? videos.map((v, i) => (
                                     <div key={i} style={{ marginBottom: 12, cursor: 'pointer' }} onClick={() => window.open(`https://www.youtube.com/watch?v=${v.videoId}`, '_blank')}>
                                         <img src={v.thumbnail} alt={v.title} style={{ width: '100%', borderRadius: 10, marginBottom: 6 }} />

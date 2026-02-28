@@ -13,35 +13,37 @@ import { Send, Bot, Zap, RefreshCw, TrendingUp, ChevronDown, ChevronUp } from 'l
 import { coachApi, workoutApi, nutritionApi } from '../services/api'
 import Navbar from '../components/Navbar'
 import { useAuthStore } from '../store/authStore'
+import { useTranslation } from '../store/settingsStore'
 
 const STATUS_MODES = [
-    { id: 'normal', label: 'Normal', icon: '💬', color: '#10b981' },
-    { id: 'traveling', label: 'Traveling', icon: '✈️', color: '#06b6d4' },
-    { id: 'recovering', label: 'Recovering', icon: '🩹', color: '#f59e0b' },
-    { id: 'fatigued', label: 'Fatigued', icon: '😴', color: '#a855f7' },
+    { id: 'normal', labelKey: 'coach.status_normal', icon: '💬', color: '#10b981' },
+    { id: 'traveling', labelKey: 'coach.status_traveling', icon: '✈️', color: '#06b6d4' },
+    { id: 'recovering', labelKey: 'coach.status_recovering', icon: '🩹', color: '#f59e0b' },
+    { id: 'fatigued', labelKey: 'coach.status_fatigued', icon: '😴', color: '#a855f7' },
 ]
 
 const ADJUST_REASONS = [
-    { id: 'travel', label: '✈️ Traveling', desc: 'Hotel-room bodyweight plan' },
-    { id: 'injury', label: '🩹 Injury', desc: 'Avoid affected area' },
-    { id: 'time_constraint', label: '⏱️ Short on Time', desc: '20-min HIIT sessions' },
-    { id: 'health_issue', label: '🏥 Health Issue', desc: 'Gentle recovery plan' },
+    { id: 'travel', labelKey: 'coach.adjust_travel', descKey: 'coach.adjust_travel_desc' },
+    { id: 'injury', labelKey: 'coach.adjust_injury', descKey: 'coach.adjust_injury_desc' },
+    { id: 'time_constraint', labelKey: 'coach.adjust_time', descKey: 'coach.adjust_time_desc' },
+    { id: 'health_issue', labelKey: 'coach.adjust_health', descKey: 'coach.adjust_health_desc' },
 ]
 
 const SUGGESTIONS = [
-    '💪 How can I build muscle faster?',
-    '✈️ I am traveling — give me a hotel workout',
-    '🩹 I have knee pain, what should I avoid?',
-    '😴 I am exhausted, should I still work out?',
-    '🥗 What should I eat before a workout?',
-    '🔥 Give me a quick 15-minute HIIT routine',
+    'coach.sugg_1',
+    'coach.sugg_2',
+    'coach.sugg_3',
+    'coach.sugg_4',
+    'coach.sugg_5',
+    'coach.sugg_6',
 ]
 
 export default function CoachPage() {
     const { user } = useAuthStore()
+    const { t } = useTranslation()
     const [messages, setMessages] = useState([{
         role: 'assistant',
-        content: `Hi ${user?.full_name || user?.username}! 👋\n\nI'm **AROMI**, your personal AI health & wellness coach. I adapt to your life — whether you're traveling, injured, tired, or motivated, I've got the right guidance for you.\n\nTell me how you're feeling today, or pick a status mode above to get context-aware advice! 💪`,
+        content: `${t('coach.greeting_start') || 'Hi'} ${user?.full_name || user?.username}! 👋\n\n${t('coach.greeting_body') || 'I am AROMI...'}`,
         created_at: new Date().toISOString()
     }])
     const [input, setInput] = useState('')
@@ -149,11 +151,11 @@ export default function CoachPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 48, height: 48, background: 'var(--gradient-main)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}>🤖</div>
                         <div>
-                            <h1 style={{ fontSize: 20, fontWeight: 800 }}>AROMI AI Coach</h1>
+                            <h1 style={{ fontSize: 20, fontWeight: 800 }}>{t('coach.title') || 'AROMI AI Coach'}</h1>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: activeStatus?.color || '#10b981', boxShadow: `0 0 8px ${activeStatus?.color || '#10b981'}` }} />
                                 <span style={{ fontSize: 12, color: activeStatus?.color || '#10b981', fontWeight: 600 }}>
-                                    {activeStatus?.icon} {activeStatus?.label} Mode
+                                    {activeStatus?.icon} {activeStatus?.labelKey ? t(activeStatus.labelKey) : activeStatus?.label} {t('coach.mode') || 'Mode'}
                                 </span>
                             </div>
                         </div>
@@ -164,16 +166,16 @@ export default function CoachPage() {
                         {STATUS_MODES.map(m => (
                             <button key={m.id} onClick={() => setUserStatus(m.id)}
                                 style={{ padding: '6px 12px', borderRadius: 20, border: `1px solid ${userStatus === m.id ? m.color : 'var(--border)'}`, background: userStatus === m.id ? `${m.color}22` : 'transparent', color: userStatus === m.id ? m.color : 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s' }}>
-                                {m.icon} {m.label}
+                                {m.icon} {t(m.labelKey)}
                             </button>
                         ))}
                         <button onClick={analyzeProgress} disabled={analysisLoading}
                             style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(16,185,129,0.5)', background: 'rgba(16,185,129,0.1)', color: '#10b981', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {analysisLoading ? <><div className="spinner" style={{ width: 12, height: 12, borderWidth: 2, borderTopColor: '#10b981' }} /> Analyzing...</> : <><TrendingUp size={13} /> My Progress</>}
+                            {analysisLoading ? <><div className="spinner" style={{ width: 12, height: 12, borderWidth: 2, borderTopColor: '#10b981' }} /> {t('coach.analyzing') || 'Analyzing...'}</> : <><TrendingUp size={13} /> {t('coach.my_progress') || 'My Progress'}</>}
                         </button>
                         <button onClick={() => setShowAdjust(!showAdjust)}
                             style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(245,158,11,0.5)', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <RefreshCw size={13} /> Adjust Plan {showAdjust ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            <RefreshCw size={13} /> {t('coach.adjust_plan') || 'Adjust Plan'} {showAdjust ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                         </button>
                     </div>
                 </div>
@@ -181,27 +183,27 @@ export default function CoachPage() {
                 {/* ── Adjust Plan Panel (Activity 3.5) ───────────────── */}
                 {showAdjust && (
                     <div className="card" style={{ padding: 20, background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 14 }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#f59e0b', marginBottom: 14 }}>⚙️ Dynamic Plan Adjustment</h3>
+                        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#f59e0b', marginBottom: 14 }}>{t('coach.dynamic_adjustment') || '⚙️ Dynamic Plan Adjustment'}</h3>
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14 }}>
-                            Tell AROMI what changed — it will adapt your workout plan accordingly.
+                            {t('coach.adjust_desc') || 'Tell AROMI what changed — it will adapt your workout plan accordingly.'}
                         </p>
                         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
                             {ADJUST_REASONS.map(r => (
                                 <button key={r.id} onClick={() => setAdjustReason(r.id)}
                                     style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${adjustReason === r.id ? '#f59e0b' : 'var(--border)'}`, background: adjustReason === r.id ? 'rgba(245,158,11,0.15)' : 'transparent', color: adjustReason === r.id ? '#f59e0b' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                                    {r.label}
-                                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{r.desc}</div>
+                                    {t(r.labelKey)}
+                                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{t(r.descKey)}</div>
                                 </button>
                             ))}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                            <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Duration:</label>
+                            <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('coach.duration') || 'Duration:'}</label>
                             <input type="range" min={1} max={14} value={adjustDays} onChange={e => setAdjustDays(Number(e.target.value))}
                                 style={{ flex: 1, accentColor: '#f59e0b' }} />
-                            <span style={{ fontSize: 14, fontWeight: 700, color: '#f59e0b', minWidth: 60 }}>{adjustDays} days</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: '#f59e0b', minWidth: 60 }}>{adjustDays} {t('coach.days') || 'days'}</span>
                             <button onClick={adjustPlan} disabled={adjusting} className="btn-primary"
                                 style={{ padding: '8px 20px', fontSize: 13, background: '#f59e0b', minWidth: 100 }}>
-                                {adjusting ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /></> : '✅ Apply'}
+                                {adjusting ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /></> : `✅ ${t('coach.apply') || 'Apply'}`}
                             </button>
                         </div>
                     </div>
@@ -241,11 +243,11 @@ export default function CoachPage() {
                 {messages.length < 4 && (
                     <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
                         {SUGGESTIONS.map(s => (
-                            <button key={s} onClick={() => send(s)}
+                            <button key={s} onClick={() => send(t(s) || s)}
                                 style={{ padding: '8px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', transition: 'all 0.2s', flexShrink: 0 }}
                                 onMouseEnter={e => { e.target.style.borderColor = 'var(--accent-purple)'; e.target.style.color = 'var(--accent-purple)' }}
                                 onMouseLeave={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-secondary)' }}>
-                                {s}
+                                {t(s) || s}
                             </button>
                         ))}
                     </div>
@@ -255,7 +257,7 @@ export default function CoachPage() {
                 <div style={{ display: 'flex', gap: 10, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '8px 8px 8px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
                     <input value={input} onChange={e => setInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                        placeholder={`Ask AROMI (${activeStatus?.label} mode)...`}
+                        placeholder={`${t('coach.ask_aromi') || 'Ask AROMI'} (${activeStatus?.labelKey ? t(activeStatus.labelKey) : activeStatus?.label} ${t('coach.mode') ? t('coach.mode').toLowerCase() : 'mode'})...`}
                         style={{ flex: 1, background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: 15 }} />
                     <button onClick={() => send()} disabled={!input.trim() || loading}
                         className="btn-primary" style={{ padding: '10px 18px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>

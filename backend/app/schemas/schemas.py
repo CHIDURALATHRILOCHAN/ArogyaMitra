@@ -24,6 +24,14 @@ class UserRegister(BaseModel):
 # Backward-compat alias
 UserCreate = UserRegister
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    height_cm: Optional[float] = None
+    weight_kg: Optional[float] = None
+
 
 class UserLogin(BaseModel):
     username: Optional[str] = None   # Login with username

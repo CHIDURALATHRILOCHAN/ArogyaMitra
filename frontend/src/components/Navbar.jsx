@@ -2,18 +2,20 @@ import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Dumbbell, Apple, TrendingUp, MessageCircle, LogOut, User } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useTranslation } from '../store/settingsStore'
 
 const links = [
-    { to: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-    { to: '/workouts', icon: <Dumbbell size={16} />, label: 'Workouts' },
-    { to: '/nutrition', icon: <Apple size={16} />, label: 'Nutrition' },
-    { to: '/progress', icon: <TrendingUp size={16} />, label: 'Progress' },
-    { to: '/coach', icon: <MessageCircle size={16} />, label: 'AI Coach' },
+    { to: '/dashboard', icon: <LayoutDashboard size={16} />, labelKey: 'nav.dashboard' },
+    { to: '/workouts', icon: <Dumbbell size={16} />, labelKey: 'nav.workouts' },
+    { to: '/nutrition', icon: <Apple size={16} />, labelKey: 'nav.nutrition' },
+    { to: '/progress', icon: <TrendingUp size={16} />, labelKey: 'nav.progress' },
+    { to: '/coach', icon: <MessageCircle size={16} />, labelKey: 'nav.coach' },
 ]
 
 export default function Navbar() {
     const navigate = useNavigate()
     const { user, logout } = useAuthStore()
+    const { t } = useTranslation()
 
     const handleLogout = () => { logout(); navigate('/') }
 
@@ -26,7 +28,7 @@ export default function Navbar() {
             <div className="navbar-links">
                 {links.map(l => (
                     <NavLink key={l.to} to={l.to} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                        {l.icon} {l.label}
+                        {l.icon} {t(l.labelKey)}
                     </NavLink>
                 ))}
             </div>

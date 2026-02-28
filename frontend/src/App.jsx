@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { useSettingsStore } from './store/settingsStore'
 import AROMIFloating from './components/AROMIFloating'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -25,6 +26,15 @@ function GuestRoute({ children }) {
 
 export default function App() {
     const { isAuthenticated } = useAuthStore()
+    const { theme } = useSettingsStore()
+
+    React.useEffect(() => {
+        if (theme === 'Light Mode') {
+            document.body.classList.add('light-theme')
+        } else {
+            document.body.classList.remove('light-theme')
+        }
+    }, [theme])
 
     return (
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
