@@ -27,6 +27,7 @@ const ADJUST_REASONS = [
     { id: 'injury', labelKey: 'coach.adjust_injury', descKey: 'coach.adjust_injury_desc' },
     { id: 'time_constraint', labelKey: 'coach.adjust_time', descKey: 'coach.adjust_time_desc' },
     { id: 'health_issue', labelKey: 'coach.adjust_health', descKey: 'coach.adjust_health_desc' },
+    { id: 'custom', labelKey: 'coach.adjust_custom', descKey: 'coach.adjust_custom_desc' }
 ]
 
 const SUGGESTIONS = [
@@ -53,6 +54,7 @@ export default function CoachPage() {
     const [analysisLoading, setAnalysisLoading] = useState(false)
     const [showAdjust, setShowAdjust] = useState(false)
     const [adjustReason, setAdjustReason] = useState('travel')
+    const [customReason, setCustomReason] = useState('')
     const [adjustDays, setAdjustDays] = useState(3)
     const [adjusting, setAdjusting] = useState(false)
     const bottomRef = useRef(null)
@@ -108,27 +110,49 @@ export default function CoachPage() {
     }
 
     const adjustPlan = async () => {
+        const payloadReason = adjustReason === 'custom' ? customReason.trim() : adjustReason
+        if (adjustReason === 'custom' && !payloadReason) return
+
         setAdjusting(true)
         try {
             let currentPlan = {}
             try { const { data } = await workoutApi.getPlan(); currentPlan = data?.plan_data || {} } catch { }
 
             const { data } = await coachApi.adjustPlan({
-                reason: adjustReason,
+                reason: payloadReason,
                 duration_days: adjustDays,
                 current_plan: currentPlan,
                 user_data: { fitness_goal: user?.fitness_goal, fitness_level: user?.fitness_level }
             })
-            const adj = data.adjusted_plan?.adjusted_plan || data.adjusted_plan
-            const note = adj?.note || `Plan adjusted for ${adjustReason}`
-            const exercises = adj?.exercises?.join(', ') || ''
+            const adj = data.adjusted_plan?.adjusted_plan || data.adjusted_plan || {}
+
+            let markdownPlan = ''
+            if (adj.days && Array.isArray(adj.days)) {
+                markdownPlan = `\n\n**${adj.week_summary || 'Your Adjusted Plan:'}**\n`
+                adj.days.slice(0, adjustDays).forEach(d => {
+                    markdownPlan += `\n**${d.day}**: ${d.focus || 'Workout'}`
+                    if (d.main_workout && d.main_workout.length) {
+                        const exs = d.main_workout.map(w => w.exercise).join(', ')
+                        markdownPlan += `\n* Exercises: ${exs}`
+                    }
+                })
+            } else if (adj.note) {
+                // Fallbacks for mock note and exercises 
+                const note = adj.note || `Plan adjusted for ${payloadReason}`
+                const exercises = Array.isArray(adj.exercises) ? adj.exercises.join(', ') : (adj.exercises || '')
+                markdownPlan = `\n\n${note}${exercises ? `\n\n🏋️ Suggested: ${exercises}` : ''}`
+            } else {
+                markdownPlan = `\n\nPlan adjusted for ${payloadReason}.`
+            }
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: `✅ **Plan Adjusted for ${adjustDays} days (${adjustReason})**\n\n${note}${exercises ? `\n\n🏋️ Suggested: ${exercises}` : ''}\n\nYou've got this! Consistency is key 💪`,
+                content: `✅ **Plan Adjusted for ${adjustDays} days (${payloadReason})**${markdownPlan}\n\nYou've got this! Consistency is key 💪`,
                 created_at: new Date().toISOString()
             }])
             setShowAdjust(false)
+            setCustomReason('') // Reset custom field on success
+
         } catch {
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -187,7 +211,7 @@ export default function CoachPage() {
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14 }}>
                             {t('coach.adjust_desc') || 'Tell AROMI what changed — it will adapt your workout plan accordingly.'}
                         </p>
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: adjustReason === 'custom' ? 10 : 14 }}>
                             {ADJUST_REASONS.map(r => (
                                 <button key={r.id} onClick={() => setAdjustReason(r.id)}
                                     style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${adjustReason === r.id ? '#f59e0b' : 'var(--border)'}`, background: adjustReason === r.id ? 'rgba(245,158,11,0.15)' : 'transparent', color: adjustReason === r.id ? '#f59e0b' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
@@ -196,6 +220,14 @@ export default function CoachPage() {
                                 </button>
                             ))}
                         </div>
+                        {adjustReason === 'custom' && (
+                            <textarea
+                                value={customReason}
+                                onChange={e => setCustomReason(e.target.value)}
+                                placeholder="E.g., I am traveling in a train and only have access to train food..."
+                                style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)', marginBottom: 14, minHeight: 60, resize: 'vertical', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+                            />
+                        )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                             <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('coach.duration') || 'Duration:'}</label>
                             <input type="range" min={1} max={14} value={adjustDays} onChange={e => setAdjustDays(Number(e.target.value))}

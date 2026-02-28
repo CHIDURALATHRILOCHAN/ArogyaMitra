@@ -112,6 +112,8 @@ export const translations = {
     'coach.adjust_time_desc': { en: '20-min HIIT sessions', hi: '20 मिनट के HIIT सत्र', te: '20-నిమిషాల HIIT సెషన్లు' },
     'coach.adjust_health': { en: '🏥 Health Issue', hi: '🏥 स्वास्थ्य समस्या', te: '🏥 ఆరోగ్య సమస్య' },
     'coach.adjust_health_desc': { en: 'Gentle recovery plan', hi: 'सौम्य रिकवरी योजना', te: 'సున్నితమైన రికవరీ ప్లాన్' },
+    'coach.adjust_custom': { en: '✍️ Custom Constraint', hi: '✍️ कस्टम प्रतिबंध', te: '✍️ అనుకూల పరిమితి' },
+    'coach.adjust_custom_desc': { en: 'Type your own situation', hi: 'अपनी स्थिति टाइप करें', te: 'మీ స్వంత పరిస్థితిని టైప్ చేయండి' },
     'coach.sugg_1': { en: '💪 How can I build muscle faster?', hi: '💪 मैं तेजी से मांसपेशियां कैसे बना सकता हूं?', te: '💪 నేను కండరాలను వేగంగా ఎలా నిర్మించగలను?' },
     'coach.sugg_2': { en: '✈️ I am traveling — give me a hotel workout', hi: '✈️ मैं यात्रा कर रहा हूं — मुझे एक होटल कसरत दें', te: '✈️ నేను ప్రయాణం చేస్తున్నాను — నాకు హోటల్ వర్కౌట్ ఇవ్వు' },
     'coach.sugg_3': { en: '🩹 I have knee pain, what should I avoid?', hi: '🩹 मेरे घुटने में दर्द है, मुझे किससे बचना चाहिए?', te: '🩹 నాకు మోకాలి నొప్పి ఉంది, నేను ఏమి నివారించాలి?' },

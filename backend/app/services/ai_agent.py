@@ -382,9 +382,14 @@ Keep it concise, motivating, and personalized."""
             "time_constraint": {"note": f"Quick {duration_days}-day HIIT plan — 20 minutes max daily", "exercises": ["Burpees", "Jumping Jacks", "High Knees", "Push-ups Circuit"]},
             "health_issue": {"note": f"Gentle {duration_days}-day recovery plan", "exercises": ["Light Walking", "Yoga", "Breathing Exercises", "Gentle Stretching"]},
         }
-        adj = adjustments.get(reason, adjustments["time_constraint"])
+        # Fallback for custom user strings
+        default_adj = {
+            "note": f"Custom {duration_days}-day adapted plan based on your situation: '{reason}'", 
+            "exercises": ["Adaptive Stretching", "Bodyweight movements", "Mindful walking", "Joint mobility routines"]
+        }
+        adj = adjustments.get(reason, default_adj)
         return {"adjusted_plan": adj, "reason": reason, "duration_days": duration_days,
-                "message": f"Plan adjusted for {reason}. Stay consistent! 💪"}
+                "message": f"Plan adjusted. Stay consistent! 💪"}
 
 
 # Singleton instance
