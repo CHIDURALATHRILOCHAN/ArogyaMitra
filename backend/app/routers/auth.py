@@ -7,7 +7,7 @@ from typing import Any
 from app.database import get_db
 from app.models.user import User
 from app.schemas.schemas import UserCreate, UserLogin, UserOut, TokenOut, UserUpdate
-from app.utils.auth import get_password_hash, verify_password, create_access_token, get_current_usern
+from app.services.auth_service import hash_password, verify_password, create_access_token, decode_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
