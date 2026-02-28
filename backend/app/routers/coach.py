@@ -78,7 +78,8 @@ async def aromi_coach_chat(
 @router.post("/adjust-plan")
 async def adjust_plan_dynamically(
     request: DynamicPlanAdjustmentRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Dynamically adjust an existing workout/nutrition plan due to life changes.
@@ -104,6 +105,45 @@ async def adjust_plan_dynamically(
         current_plan=request.current_plan,
         user_data=user_data
     )
+
+    # 💾 Persist newly adjusted days to the user's active workout plan in the DB
+    adj_plan = adjusted.get("adjusted_plan", adjusted)
+    if isinstance(adj_plan, dict):
+        new_days = adj_plan.get("days")
+        if new_days and isinstance(new_days, list):
+            from app.models.workout_plan import WorkoutPlan
+            from sqlalchemy.orm.attributes import flag_modified
+            
+            # Fetch active workout plan
+            result = await db.execute(
+                select(WorkoutPlan)
+                .where(WorkoutPlan.user_id == current_user.id, WorkoutPlan.is_active == 1)
+                .order_by(WorkoutPlan.created_at.desc())
+            )
+            plan = result.scalars().first()
+            
+            if plan and plan.plan_data and "days" in plan.plan_data:
+                old_days = plan.plan_data["days"]
+                curr_weekday = datetime.utcnow().weekday() # Mon=0, Sun=6
+                
+                # Overwrite up to duration_days into the future with AI's new days
+                for i, new_day_data in enumerate(new_days):
+                    if i >= request.duration_days:
+                        break
+                    target_idx = (curr_weekday + i) % 7
+                    if target_idx < len(old_days):
+                        # Keep the original day name (e.g. 'Wednesday')
+                        original_name = old_days[target_idx].get("day", f"Day {target_idx+1}")
+                        new_day_data["day"] = original_name
+                        old_days[target_idx] = new_day_data
+                
+                plan.plan_data["days"] = old_days
+                if "week_summary" in adj_plan:
+                    plan.plan_data["week_summary"] = adj_plan["week_summary"]
+                    
+                flag_modified(plan, "plan_data")
+                await db.commit()
+
     return {"adjusted_plan": adjusted, "reason": request.reason, "duration_days": request.duration_days}
 
 

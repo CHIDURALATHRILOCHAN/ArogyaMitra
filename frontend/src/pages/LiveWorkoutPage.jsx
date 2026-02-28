@@ -11,6 +11,7 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
     const [restSeconds, setRestSeconds] = useState(0);
     const [loadingModel, setLoadingModel] = useState(false);
     const [status, setStatus] = useState('');
+    const [multiPersonWarning, setMultiPersonWarning] = useState(false);
 
     // Refs so MediaPipe callback always sees fresh values
     const phaseRef = useRef('idle');
@@ -19,8 +20,10 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
     const currentSetRef = useRef(1);
     const exerciseRef = useRef(exercise);
     const poseRef = useRef(null);
+    const faceDetectorRef = useRef(null);
     const animFrameRef = useRef(null);
     const restTimerRef = useRef(null);
+    const multiPersonRef = useRef(false);
 
     // Keep refs in sync
     useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -71,7 +74,10 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
 
     // ---------- MediaPipe onResults ----------
     const onResultsCallback = (results) => {
+        // Drop frames if multiple people detected or not working
         if (phaseRef.current !== 'working') return;
+        if (multiPersonRef.current) return;
+
         if (!results.poseLandmarks) return;
 
         const lm = results.poseLandmarks;
@@ -143,9 +149,38 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
         pose.onResults(onResultsCallback);
         await pose.initialize();
         poseRef.current = pose;
+
+        // ---------- Init Face Detection ----------
+        if (!window.FaceDetection) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js';
+                s.crossOrigin = 'anonymous';
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        const faceDetector = new window.FaceDetection({
+            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${f}`
+        });
+        faceDetector.setOptions({
+            model: 'short',
+            minDetectionConfidence: 0.5
+        });
+        faceDetector.onResults((res) => {
+            const hasMultiple = (res.detections && res.detections.length > 1);
+            if (multiPersonRef.current !== hasMultiple) {
+                multiPersonRef.current = hasMultiple;
+                setMultiPersonWarning(hasMultiple);
+            }
+        });
+        await faceDetector.initialize();
+        faceDetectorRef.current = faceDetector;
+
         setLoadingModel(false);
         setStatus('');
-        return pose;
+        return { pose, faceDetector };
     };
 
     const stopDetection = () => {
@@ -168,8 +203,13 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
 
     const startCamera = async () => {
         let pose = poseRef.current;
-        if (!pose) {
-            try { pose = await initPose(); } catch {
+        let fd = faceDetectorRef.current;
+        if (!pose || !fd) {
+            try {
+                const models = await initPose();
+                pose = models.pose;
+                fd = models.faceDetector;
+            } catch {
                 setStatus('Failed to load AI model.'); setLoadingModel(false); return;
             }
         }
@@ -188,7 +228,13 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
         const detect = async () => {
             if (phaseRef.current === 'idle') return;
             if (videoRef.current?.readyState >= 2 && poseRef.current && phaseRef.current === 'working') {
-                try { await poseRef.current.send({ image: videoRef.current }); } catch { }
+                try {
+                    // Send to both models seamlessly 
+                    await Promise.all([
+                        poseRef.current.send({ image: videoRef.current }),
+                        faceDetectorRef.current.send({ image: videoRef.current })
+                    ]);
+                } catch { }
             }
             animFrameRef.current = requestAnimationFrame(detect);
         };
@@ -217,6 +263,18 @@ export default function LiveWorkoutPage({ exercise, videoPlaceholder, onComplete
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-primary)', zIndex: 1000, overflowY: 'auto' }}>
+
+            {/* Warning Banner Overlay */}
+            {multiPersonWarning && (
+                <div style={{
+                    background: '#ef4444', color: 'white', fontWeight: 700,
+                    padding: '12px 24px', textAlign: 'center', fontSize: 16,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12
+                }}>
+                    ⚠️ <span>Multiple people detected in frame! Tracking paused. Ensure only 1 person is visible.</span>
+                </div>
+            )}
+
             {/* Navbar */}
             <div className="navbar" style={{ padding: '0 24px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

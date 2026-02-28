@@ -14,6 +14,7 @@ import { coachApi, workoutApi, nutritionApi } from '../services/api'
 import Navbar from '../components/Navbar'
 import { useAuthStore } from '../store/authStore'
 import { useTranslation } from '../store/settingsStore'
+import { usePlanStore } from '../store/planStore'
 
 const STATUS_MODES = [
     { id: 'normal', labelKey: 'coach.status_normal', icon: '💬', color: '#10b981' },
@@ -152,6 +153,14 @@ export default function CoachPage() {
             }])
             setShowAdjust(false)
             setCustomReason('') // Reset custom field on success
+
+            // Automatically sync the global store with the new DB changes
+            try {
+                const updated = await workoutApi.getPlan()
+                usePlanStore.getState().setWorkoutPlan(updated.data)
+            } catch (e) {
+                console.error("Could not sync plan store", e)
+            }
 
         } catch {
             setMessages(prev => [...prev, {
